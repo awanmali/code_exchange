@@ -5,10 +5,10 @@ def create_context_diagram(system_selection, inputs_interfaces, outputs_interfac
 
     # Graph attributes
     dot.attr('graph', overlap='false')
-    dot.attr('node', shape='box', style='filled', fillcolor='white')
+    dot.attr('node', shape='box', style='filled', fillcolor='white', width='1', height='1', margin='0.2,0.2')
 
     # Add the central node with distinct styling
-    dot.node(system_selection, system_selection, color='lightblue')
+    dot.node(system_selection, system_selection, color='lightblue', width='1.5', height='1.5')
 
     # Add nodes and edges for input interfaces
     for interface, (source, _) in inputs_interfaces.items():
