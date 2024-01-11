@@ -1,34 +1,35 @@
 from graphviz import Digraph
 
-def create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces, engine):
-    dot = Digraph(comment=f'Context Diagram - {engine}', engine=engine)
+def create_combined_label(edges):
+    # Combine multiple labels for edges between the same nodes into one
+    combined_edges = {}
+    for edge, label in edges.items():
+        if edge in combined_edges:
+            combined_edges[edge] += ", " + label
+        else:
+            combined_edges[edge] = label
+    return combined_edges
+
+def create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces):
+    dot = Digraph(comment='Context Diagram', engine='circo')
+
+    # Prepare combined edges for inputs and outputs
+    combined_inputs = create_combined_label(inputs_interfaces)
+    combined_outputs = create_combined_label(outputs_interfaces)
 
     # Graph attributes
     dot.attr('graph', overlap='false')
     dot.attr('node', shape='box', style='filled', fillcolor='white')
+    dot.attr('edge', fontsize='10')
 
-    # Add the central node
-    dot.node(system_selection, system_selection, color='lightblue')
-
-    # Add nodes and edges for input and output interfaces
-    for interface, (source, _) in inputs_interfaces.items():
-        if source != system_selection:
-            dot.node(source, source)
-        dot.edge(source, system_selection, label=interface)
-
-    for interface, (_, destination) in outputs_interfaces.items():
-        if destination != system_selection:
-            dot.node(destination, destination)
-        dot.edge(system_selection, destination, label=interface)
+    # Add nodes and combined edges
+    for (source, dest), label in {**combined_inputs, **combined_outputs}.items():
+        dot.node(source, source)
+        dot.node(dest, dest)
+        dot.edge(source, dest, label=label)
 
     # Render the diagram
-    filename = f'output/context_diagram_{engine}'
-    dot.render(filename, view=False, format='png')
-    print(f'Diagram rendered using {engine} engine: {filename}.png')
+    dot.render('output/context_diagram.gv', view=True, format='png')
 
-# List of Graphviz engines to try
-engines = ['dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo']
-
-# Example usage - iterate through engines and create diagrams
-for engine in engines:
-    create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces, engine)
+# Example usage
+create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces)
