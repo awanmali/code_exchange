@@ -1,37 +1,43 @@
+# Let's write a Python script that uses the Graphviz library to create two versions of the graph with the 'circo' engine.
+# The simplified version will have combined edges and no labels.
+# The detailed version will have separate edges with labels.
+
 from graphviz import Digraph
 
-def create_combined_label_and_width(interfaces):
-    combined_edges = {}
+# Function to create a combined label for edges between two nodes in the same direction
+def combine_edges(interfaces):
+    combined = {}
     for label, (source, dest) in interfaces.items():
         edge = (source, dest)
-        if edge in combined_edges:
-            combined_edges[edge]["label"] += ", " + label
-            combined_edges[edge]["width"] += 1  # Increment the width for each additional interaction
-        else:
-            combined_edges[edge] = {"label": label, "width": 1}  # Start with a width of 1
-    return combined_edges
+        if edge not in combined:
+            combined[edge] = 0
+        combined[edge] += 1
+    return combined
 
-def create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces):
+# Function to create the graph
+def create_graph(system_selection, interfaces, simplified):
     dot = Digraph(comment='Context Diagram', engine='circo')
 
-    # Prepare combined edges with labels and widths
-    combined_edges = create_combined_label_and_width({**inputs_interfaces, **outputs_interfaces})
-
-    # Graph attributes
-    dot.attr('graph', overlap='false')
+    # Node attributes
     dot.attr('node', shape='box', style='filled', fillcolor='white')
-    dot.attr('edge', fontsize='10')
 
-    # Add nodes and combined edges with dynamic thickness
-    for (source, dest), edge_info in combined_edges.items():
-        if source != system_selection:
-            dot.node(source, source)
-        if dest != system_selection:
-            dot.node(dest, dest)
-        dot.edge(source, dest, label=edge_info["label"], penwidth=str(edge_info["width"]))
+    if simplified:
+        # Combine edges and remove labels for the simplified view
+        combined_interfaces = combine_edges(interfaces)
+        for (source, dest), count in combined_interfaces.items():
+            dot.edge(source, dest)  # No label needed
+    else:
+        # Keep edges separate with labels for the detailed view
+        for label, (source, dest) in interfaces.items():
+            dot.edge(source, dest, label=label)
 
-    # Render the diagram
-    dot.render('output/context_diagram.gv', view=True, format='png')
+    # Render the graph
+    filename = f'output/context_diagram_{"simplified" if simplified else "detailed"}'
+    dot.render(filename, view=False, format='png')
+    return filename
 
-# Example usage
-create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces)
+# Generate both simplified and detailed diagrams
+simplified_output = create_graph(system_selection, interfaces, simplified=True)
+detailed_output = create_graph(system_selection, interfaces, simplified=False)
+
+simplified_output, detailed_output
