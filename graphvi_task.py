@@ -1,29 +1,34 @@
 from graphviz import Digraph
 
-def create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces):
-    dot = Digraph(comment='Context Diagram', engine='fdp')
+def create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces, engine):
+    dot = Digraph(comment=f'Context Diagram - {engine}', engine=engine)
 
     # Graph attributes
-    dot.attr('graph', overlap='scalexy')
+    dot.attr('graph', overlap='false')
     dot.attr('node', shape='box', style='filled', fillcolor='white')
 
-    # Add the central node with distinct styling
+    # Add the central node
     dot.node(system_selection, system_selection, color='lightblue')
 
-    # Add nodes and edges for input interfaces
+    # Add nodes and edges for input and output interfaces
     for interface, (source, _) in inputs_interfaces.items():
         if source != system_selection:
             dot.node(source, source)
         dot.edge(source, system_selection, label=interface)
 
-    # Add nodes and edges for output interfaces
     for interface, (_, destination) in outputs_interfaces.items():
         if destination != system_selection:
             dot.node(destination, destination)
         dot.edge(system_selection, destination, label=interface)
 
-    # Render and view the diagram
-    dot.render('output/context_diagram.gv', view=True, format='png')
+    # Render the diagram
+    filename = f'output/context_diagram_{engine}'
+    dot.render(filename, view=False, format='png')
+    print(f'Diagram rendered using {engine} engine: {filename}.png')
 
-# Example usage
-create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces)
+# List of Graphviz engines to try
+engines = ['dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo']
+
+# Example usage - iterate through engines and create diagrams
+for engine in engines:
+    create_context_diagram(system_selection, inputs_interfaces, outputs_interfaces, engine)
