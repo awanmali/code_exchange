@@ -1,43 +1,38 @@
-# Let's write a Python script that uses the Graphviz library to create two versions of the graph with the 'circo' engine.
-# The simplified version will have combined edges and no labels.
-# The detailed version will have separate edges with labels.
-
 from graphviz import Digraph
 
-# Function to create a combined label for edges between two nodes in the same direction
-def combine_edges(interfaces):
-    combined = {}
-    for label, (source, dest) in interfaces.items():
-        edge = (source, dest)
-        if edge not in combined:
-            combined[edge] = 0
-        combined[edge] += 1
-    return combined
+def create_simplified_graph(system_selection, inputs_interfaces, outputs_interfaces):
+    simplified_dot = Digraph(comment='Simplified Context Diagram', engine='circo')
+    simplified_dot.attr('node', shape='box', style='filled', fillcolor='white')
 
-# Function to create the graph
-def create_graph(system_selection, interfaces, simplified):
-    dot = Digraph(comment='Context Diagram', engine='circo')
+    # Combining input interfaces
+    seen_input_edges = set()
+    for (source, dest) in inputs_interfaces.values():
+        if (source, dest) not in seen_input_edges:
+            simplified_dot.edge(source, dest)  # Add edge without label
+            seen_input_edges.add((source, dest))
 
-    # Node attributes
-    dot.attr('node', shape='box', style='filled', fillcolor='white')
+    # Combining output interfaces
+    seen_output_edges = set()
+    for (source, dest) in outputs_interfaces.values():
+        if (source, dest) not in seen_output_edges:
+            simplified_dot.edge(source, dest)  # Add edge without label
+            seen_output_edges.add((source, dest))
 
-    if simplified:
-        # Combine edges and remove labels for the simplified view
-        combined_interfaces = combine_edges(interfaces)
-        for (source, dest), count in combined_interfaces.items():
-            dot.edge(source, dest)  # No label needed
-    else:
-        # Keep edges separate with labels for the detailed view
-        for label, (source, dest) in interfaces.items():
-            dot.edge(source, dest, label=label)
+    simplified_dot.render('output/simplified_context_diagram', format='png', cleanup=True)
 
-    # Render the graph
-    filename = f'output/context_diagram_{"simplified" if simplified else "detailed"}'
-    dot.render(filename, view=False, format='png')
-    return filename
+def create_detailed_graph(system_selection, inputs_interfaces, outputs_interfaces):
+    detailed_dot = Digraph(comment='Detailed Context Diagram', engine='circo')
+    detailed_dot.attr('node', shape='box', style='filled', fillcolor='white')
 
-# Generate both simplified and detailed diagrams
-simplified_output = create_graph(system_selection, interfaces, simplified=True)
-detailed_output = create_graph(system_selection, interfaces, simplified=False)
+    # Adding all input interfaces with labels
+    for label, (source, dest) in inputs_interfaces.items():
+        detailed_dot.edge(source, dest, label=label)
 
-simplified_output, detailed_output
+    # Adding all output interfaces with labels
+    for label, (source, dest) in outputs_interfaces.items():
+        detailed_dot.edge(source, dest, label=label)
+
+    detailed_dot.render('output/detailed_context_diagram', format='png', cleanup=True)
+
+create_simplified_graph(system_selection, inputs_interfaces, outputs_interfaces)
+create_detailed_graph(system_selection, inputs_interfaces, outputs_interfaces)
