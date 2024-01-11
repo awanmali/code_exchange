@@ -1,9 +1,9 @@
 from graphviz import Digraph
 
-def create_combined_label(edges):
-    # Combine multiple labels for edges between the same nodes into one
+def create_combined_label(interfaces):
     combined_edges = {}
-    for edge, label in edges.items():
+    for label, (source, dest) in interfaces.items():
+        edge = (source, dest)
         if edge in combined_edges:
             combined_edges[edge] += ", " + label
         else:
@@ -14,8 +14,7 @@ def create_context_diagram(system_selection, inputs_interfaces, outputs_interfac
     dot = Digraph(comment='Context Diagram', engine='circo')
 
     # Prepare combined edges for inputs and outputs
-    combined_inputs = create_combined_label(inputs_interfaces)
-    combined_outputs = create_combined_label(outputs_interfaces)
+    combined_edges = create_combined_label({**inputs_interfaces, **outputs_interfaces})
 
     # Graph attributes
     dot.attr('graph', overlap='false')
@@ -23,9 +22,11 @@ def create_context_diagram(system_selection, inputs_interfaces, outputs_interfac
     dot.attr('edge', fontsize='10')
 
     # Add nodes and combined edges
-    for (source, dest), label in {**combined_inputs, **combined_outputs}.items():
-        dot.node(source, source)
-        dot.node(dest, dest)
+    for (source, dest), label in combined_edges.items():
+        if source != system_selection:
+            dot.node(source, source)
+        if dest != system_selection:
+            dot.node(dest, dest)
         dot.edge(source, dest, label=label)
 
     # Render the diagram
